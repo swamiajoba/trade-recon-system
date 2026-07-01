@@ -1,0 +1,14 @@
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/tradingdb
+#    username: postgres
+#    password: admin
+#    driver-class-name: org.postgresql.Driver
+
+spring:
+  liquibase:
+    change-log: classpath:db/changelog-dev.xml
+
+logging:
+  level:
+    com.bank.trading: debug

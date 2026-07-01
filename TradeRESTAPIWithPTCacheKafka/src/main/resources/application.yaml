@@ -1,0 +1,129 @@
+spring:
+  application:
+    name: TradeRESTAPIWithPTCacheKafka
+
+  # database settings
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tradingdb
+    username: postgres
+    #    password: admin
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  # ehcache settings
+  cache:
+    type: jcache                                    # ← tell Spring Boot to use JCache/Ehcache
+    jcache:
+      config: classpath:ehcache.xml
+
+  # profile  settings
+#  profiles:
+#    active: dev
+
+  # liquibase settings
+  liquibase:
+    change-log: classpath:db/changelog.xml
+    enabled: true
+
+  # kafka settings
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    consumer:
+      group-id: recon-group
+      auto-offset-reset: earliest
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+
+server:
+  port: 8082
+#  error:
+#    include-stacktrace: never
+#    include-message: never
+#    include-binding-errors: never
+
+
+ # actuator and prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env,beans
+
+  endpoint:
+    health:
+      show-details: always
+    env:
+      show-values: always
+
+  metrics:
+    cache:
+      instrument-active-caches: true
+
+  info:
+    env:
+      enabled: true
+
+  tracing:
+    sampling:
+      probability: 1.0
+
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
+  observations:
+    annotations:
+      enabled: true
+#
+#management:
+#   endpoints:
+#     web:
+#       exposure:
+#         include: health,info,metrics,prometheus,env,beans
+#
+#   endpoint:
+#      health:
+#        show-details: always
+#  # ↓ expose cache metrics explicitly
+#   metrics:
+#     cache:
+#       instrument-active-caches: true
+#   info:
+#     env:
+#       enabled: true
+#  # for zipkin
+#   tracing:
+#     sampling:
+#       probability: 1.0     #Trace 100% of requests
+#   zipkin:
+#     tracing:
+#       endpoint: http://localhost:9411/api/v2/spans
+#   observations:
+#     annotations:
+#       enabled: true   #rewuired for @NewSpan
+
+info:
+  app:
+    name: Trading System
+    version: 1.0
+    owner: Deutsche Bank Training
+
+# logging settings
+#logging:
+#  level:
+#    root: info
+#    liquibase: info
+
+logging:
+  level:
+    root: info
+    liquibase: info
+    zipkin2: debug
+    io.micrometer.tracing: debug
+    org.springframework.boot.actuate.autoconfigure.tracing: debug
+
+#debug: true

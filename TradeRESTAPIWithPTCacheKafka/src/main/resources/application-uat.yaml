@@ -1,0 +1,10 @@
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://uat-db-server:5432/tradingdb
+#    username: uat_user
+#    password: uat_password
+#    driver-class-name: org.postgresql.Driver
+
+logging:
+  level:
+    com.bank.trading: INFO

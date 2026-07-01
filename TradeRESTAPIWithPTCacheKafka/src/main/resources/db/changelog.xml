@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="changes/001-create-audit-log.xml" relativeToChangelogFile="true"/>
+    <include file="changes/002-create-counterparties.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-create-instruments.xml" relativeToChangelogFile="true"/>
+    <include file="changes/004-create-trades.xml" relativeToChangelogFile="true"/>
+    <include file="changes/005-create-settlements.xml" relativeToChangelogFile="true"/>
+    <include file="changes/006-create-recon-breaks.xml" relativeToChangelogFile="true"/>
+    <include file="changes/007-seed-demo-data.xml" relativeToChangelogFile="true"/>
+</databaseChangeLog>

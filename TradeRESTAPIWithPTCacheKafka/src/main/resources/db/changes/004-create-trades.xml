@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004" author="trainer">
+
+        <createTable tableName="trades">
+
+            <column name="trade_id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="counterparty_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="instrument_id" type="INTEGER"/>
+
+            <column name="quantity" type="NUMERIC(18,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="price" type="NUMERIC(18,4)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="trade_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="trade_type" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="trades"
+                baseColumnNames="counterparty_id"
+                constraintName="fk_trade_counterparty"
+                referencedTableName="counterparties"
+                referencedColumnNames="cp_id"/>
+
+        <addForeignKeyConstraint
+                baseTableName="trades"
+                baseColumnNames="instrument_id"
+                constraintName="trades_instrument_id_fkey"
+                referencedTableName="instruments"
+                referencedColumnNames="instrument_id"/>
+
+        <sql>
+            ALTER TABLE trades
+                ADD CONSTRAINT trades_quantity_check
+                    CHECK (quantity > 0);
+        </sql>
+
+        <sql>
+            ALTER TABLE trades
+                ADD CONSTRAINT trades_price_check
+                    CHECK (price > 0);
+        </sql>
+
+        <sql>
+            ALTER TABLE trades
+                ADD CONSTRAINT trades_trade_type_check
+                    CHECK (trade_type IN ('BUY','SELL'));
+        </sql>
+
+        <sql>
+            ALTER TABLE trades
+                ADD CONSTRAINT trades_status_check
+                    CHECK (status IN ('NEW','EXECUTED','CANCELLED'));
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

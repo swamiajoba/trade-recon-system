@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Run everything in main first — tables must exist before dev alters them -->
+    <include file="db/changelog.xml"/>
+
+    <include file="changes/002-add-resolved-by-column.xml" relativeToChangelogFile="true"/>
+
+    <include file="changes/003-create-index-on-break-status.xml" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>
+
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+
+<!--<databaseChangeLog-->
+<!--        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"-->
+<!--        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+
+<!--        xsi:schemaLocation="-->
+<!--        http://www.liquibase.org/xml/ns/dbchangelog-->
+<!--        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">-->
+
+<!--&lt;!&ndash;    <include file="db/changes/001-create-audit-log.xml"/>&ndash;&gt;-->
+<!--    <include-->
+<!--            file="changes/001-dev-audit-log.xml"-->
+<!--            relativeToChangelogFile="true"/>-->
+
+<!--    <include-->
+<!--                file="changes/002-add-resolved-by-column.xml"-->
+<!--                relativeToChangelogFile="true"/>-->
+
+
+<!--    <include-->
+<!--            file="changes/003-create-index-on-break-status.xml"-->
+<!--            relativeToChangelogFile="true"/>-->
+
+<!--</databaseChangeLog>-->

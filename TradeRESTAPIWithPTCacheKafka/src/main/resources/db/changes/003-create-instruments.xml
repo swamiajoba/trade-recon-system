@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003" author="trainer">
+
+        <createTable tableName="instruments">
+
+            <column name="instrument_id" type="SERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="isin" type="CHAR(12)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="asset_class" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="instrument_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="currency" type="CHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="issuer" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="maturity_date" type="DATE"/>
+
+            <column name="coupon_rate" type="NUMERIC(5,2)"/>
+
+        </createTable>
+
+        <sql>
+            ALTER TABLE instruments
+                ADD CONSTRAINT instruments_asset_class_check
+                    CHECK (asset_class IN ('BOND','EQUITY','FX'));
+        </sql>
+
+        <sql>
+            ALTER TABLE instruments
+                ADD CONSTRAINT instruments_coupon_rate_check
+                    CHECK (coupon_rate >= 0);
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

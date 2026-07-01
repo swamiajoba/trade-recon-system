@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="002" author="trainer">
+
+        <createTable tableName="counterparties">
+
+            <column name="cp_id" type="SERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="name" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="lei" type="CHAR(20)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="bic" type="CHAR(11)"/>
+
+            <column name="country" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="credit_rating" type="VARCHAR(10)"/>
+
+            <column name="counterparty_type" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <sql>
+            ALTER TABLE counterparties
+                ADD CONSTRAINT chk_lei_length
+                    CHECK (LENGTH(TRIM(lei)) = 20);
+        </sql>
+
+        <sql>
+            ALTER TABLE counterparties
+                ADD CONSTRAINT chk_credit_rating
+                    CHECK (credit_rating IN ('AAA','AA','A','BBB','BB','B','CCC','DEFAULT'));
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="006" author="trainer">
+
+        <createTable tableName="recon_breaks">
+
+            <column name="break_id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="trade_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="break_type" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="our_qty" type="NUMERIC(18,2)"/>
+
+            <column name="their_qty" type="NUMERIC(18,2)"/>
+
+            <column name="our_amount" type="NUMERIC(18,2)"/>
+
+            <column name="their_amount" type="NUMERIC(18,2)"/>
+
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="recon_breaks"
+                baseColumnNames="trade_id"
+                constraintName="fk_break_trade"
+                referencedTableName="trades"
+                referencedColumnNames="trade_id"/>
+
+        <sql>
+            ALTER TABLE recon_breaks
+                ADD CONSTRAINT recon_breaks_break_type_check
+                    CHECK (break_type IN ('QUANTITY_MISMATCH','AMOUNT_MISMATCH','MISSING_TRADE','PRICE_MISMATCH'));
+        </sql>
+
+        <sql>
+            ALTER TABLE recon_breaks
+                ADD CONSTRAINT recon_breaks_status_check
+                    CHECK (status IN ('OPEN','RESOLVED'));
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>
