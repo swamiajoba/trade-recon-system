@@ -17,6 +17,21 @@ jobs:
   # ============================================================
   build-and-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,22 +47,20 @@ jobs:
         working-directory: ./TradeRESTAPIWithPTCacheKafka
         run: mvn test
 
-      - name: Run Liquibase migration check (validates changelog.xml)
+      - name: Run Liquibase migration check
         working-directory: ./TradeRESTAPIWithPTCacheKafka
         run: >
           mvn liquibase:update
-          -Dliquibase.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-          -Dliquibase.username=sa
-          -Dliquibase.password=
-          -Dliquibase.changeLogFile=src/main/resources/db/changelog/changelog.xml
+          -Dliquibase.url=jdbc:postgresql://localhost:5432/testdb
+          -Dliquibase.username=testuser
+          -Dliquibase.password=testpass
+          -Dliquibase.changeLogFile=src/main/resources/db/changelog.xml
 
       - name: Build backend Docker image
         run: docker build -t recon-service:${{ github.sha }} ./TradeRESTAPIWithPTCacheKafka
 
       - name: Build frontend Docker image
         run: docker build -t recon-ui:${{ github.sha }} ./recon-ui
-
-
   # ============================================================
   # JOB 2: Bring up full stack (Kafka, Postgres, Prometheus,
   # Grafana, backend) via Docker Compose and verify scraping
