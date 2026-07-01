@@ -131,7 +131,7 @@ jobs:
 
       - name: Query up{job="recon-service"}
         run: |
-          RESPONSE=$(curl -s 'http://localhost:9090/api/v1/query?query=up{job="recon-service"}')
+          RESPONSE=$(curl -sG --data-urlencode 'query=up{job="recon-service"}' http://localhost:9090/api/v1/query)
           echo "$RESPONSE" | jq .
 
           RESULT_COUNT=$(echo "$RESPONSE" | jq '.data.result | length')
@@ -149,7 +149,7 @@ jobs:
 
       - name: Check JVM heap memory ceiling (bonus check)
         run: |
-          RESPONSE=$(curl -s 'http://localhost:9090/api/v1/query?query=sum(jvm_memory_used_bytes{job="recon-service",area="heap"})')
+          RESPONSE=$(curl -sG --data-urlencode 'query=sum(jvm_memory_used_bytes{job="recon-service",area="heap"})' http://localhost:9090/api/v1/query)
           echo "$RESPONSE" | jq .
           BYTES=$(echo "$RESPONSE" | jq -r '.data.result[0].value[1]')
           MB=$(echo "$BYTES / 1024 / 1024" | bc)
