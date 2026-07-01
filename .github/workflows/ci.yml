@@ -34,11 +34,12 @@ jobs:
 
       - name: Run Liquibase migration check (validates changelog.xml)
         working-directory: ./TradeRESTAPIWithPTCacheKafka
-        run: mvn liquibase:update
-        env:
-          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-          SPRING_DATASOURCE_USERNAME: sa
-          SPRING_DATASOURCE_PASSWORD: ""
+        run: >
+          mvn liquibase:update
+          -Dliquibase.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+          -Dliquibase.username=sa
+          -Dliquibase.password=
+          -Dliquibase.changeLogFile=src/main/resources/db/changelog/changelog.xml
 
       - name: Build backend Docker image
         run: docker build -t recon-service:${{ github.sha }} ./TradeRESTAPIWithPTCacheKafka
