@@ -1,0 +1,153 @@
+# .github/workflows/ci.yml
+#
+# CI/CD Pipeline for the Trade Reconciliation System
+# Trigger: every push to main
+# 3 jobs: build-and-test -> deploy-observability -> verify-metrics
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+
+  # ============================================================
+  # JOB 1: Build backend + frontend, run tests, run Liquibase
+  # ============================================================
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run backend unit + integration tests
+        working-directory: ./TradeRESTAPIWithPTCacheKafka
+        run: mvn test
+
+      - name: Run Liquibase migration check (validates changelog.xml)
+        working-directory: ./TradeRESTAPIWithPTCacheKafka
+        run: mvn liquibase:update
+        env:
+          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+          SPRING_DATASOURCE_USERNAME: sa
+          SPRING_DATASOURCE_PASSWORD: ""
+
+      - name: Build backend Docker image
+        run: docker build -t recon-service:${{ github.sha }} ./TradeRESTAPIWithPTCacheKafka
+
+      - name: Build frontend Docker image
+        run: docker build -t recon-ui:${{ github.sha }} ./recon-ui
+
+
+  # ============================================================
+  # JOB 2: Bring up full stack (Kafka, Postgres, Prometheus,
+  # Grafana, backend) via Docker Compose and verify scraping
+  # ============================================================
+  deploy-observability:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start full stack via Docker Compose
+        run: docker compose up -d --build
+
+      - name: Wait for backend health endpoint
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:8082/actuator/health; then
+              echo "Backend is up"
+              break
+            fi
+            echo "Waiting for backend... attempt $i"
+            sleep 5
+          done
+
+      - name: Verify /actuator/prometheus returns 200
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082/actuator/prometheus)
+          echo "Status code: $STATUS"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "FAILED: /actuator/prometheus did not return 200"
+            exit 1
+          fi
+
+      - name: Verify Prometheus target 'recon-service' is UP
+        run: |
+          sleep 15
+          curl -s http://localhost:9090/api/v1/targets > targets.json
+          cat targets.json | jq .
+          STATE=$(jq -r '.data.activeTargets[] | select(.labels.job=="recon-service") | .health' targets.json)
+          echo "Target health: $STATE"
+          if [ "$STATE" != "up" ]; then
+            echo "FAILED: recon-service target is not UP in Prometheus"
+            exit 1
+          fi
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose down -v
+
+
+  # ============================================================
+  # JOB 3: Query Prometheus API directly and FAIL the build
+  # if recon-service metrics are missing or reporting down
+  # ============================================================
+  verify-metrics:
+    needs: deploy-observability
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restart stack for this job (fresh runner VM)
+        run: docker compose up -d --build
+
+      - name: Wait for at least one Prometheus scrape cycle
+        run: sleep 20
+
+      - name: Query up{job="recon-service"}
+        run: |
+          RESPONSE=$(curl -s 'http://localhost:9090/api/v1/query?query=up{job="recon-service"}')
+          echo "$RESPONSE" | jq .
+
+          RESULT_COUNT=$(echo "$RESPONSE" | jq '.data.result | length')
+          if [ "$RESULT_COUNT" -eq 0 ]; then
+            echo "FAILED: No metrics found for recon-service"
+            exit 1
+          fi
+
+          VALUE=$(echo "$RESPONSE" | jq -r '.data.result[0].value[1]')
+          if [ "$VALUE" != "1" ]; then
+            echo "FAILED: recon-service is reporting DOWN (up=$VALUE)"
+            exit 1
+          fi
+          echo "SUCCESS: recon-service metrics verified, up=1"
+
+      - name: Check JVM heap memory ceiling (bonus check)
+        run: |
+          RESPONSE=$(curl -s 'http://localhost:9090/api/v1/query?query=sum(jvm_memory_used_bytes{job="recon-service",area="heap"})')
+          echo "$RESPONSE" | jq .
+          BYTES=$(echo "$RESPONSE" | jq -r '.data.result[0].value[1]')
+          MB=$(echo "$BYTES / 1024 / 1024" | bc)
+          echo "Current JVM heap usage: ${MB} MB"
+
+          LIMIT_MB=512
+          if (( $(echo "$MB > $LIMIT_MB" | bc -l) )); then
+            echo "FAILED: JVM memory usage (${MB}MB) exceeds ${LIMIT_MB}MB limit"
+            exit 1
+          fi
+          echo "SUCCESS: JVM memory within ${LIMIT_MB}MB limit"
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose down -v
